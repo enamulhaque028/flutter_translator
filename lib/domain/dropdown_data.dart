@@ -1,30 +1,30 @@
-class DefaultDropdown {
-  String language;
-  String languageCode;
+import 'dart:convert';
 
-  DefaultDropdown({
-    required this.language,
+List<Language> languageFromJson(String str) => List<Language>.from(json.decode(str).map((x) => Language.fromJson(x)));
+
+class Language {
+  Language({
     required this.languageCode,
+    required this.languageName,
+    required this.nativeName,
   });
+
+  final String languageCode;
+  final String languageName;
+  final String nativeName;
+
+  factory Language.fromJson(Map<String, dynamic> json) => Language(
+    languageCode: json["languageCode"],
+    languageName: json["languageName"],
+    nativeName: json["nativeName"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "languageCode": languageCode,
+    "languageName": languageName,
+    "nativeName": nativeName,
+  };
 }
 
 
-///Language Data
-List<DefaultDropdown> kLanguageList = [
-  DefaultDropdown(
-    language: 'English',
-    languageCode: 'en',
-  ),
-  DefaultDropdown(
-    language: 'Bengali',
-    languageCode: 'bn',
-  ),
-  DefaultDropdown(
-    language: 'Hindi',
-    languageCode: 'hi',
-  ),
-  DefaultDropdown(
-    language: 'Urdu',
-    languageCode: 'ur',
-  ),
-];
+

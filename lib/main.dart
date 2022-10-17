@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:translator_app/config/route.dart';
 import 'package:translator_app/translation_page.dart';
 
 void main() {
@@ -12,6 +13,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Translate Demo',
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),

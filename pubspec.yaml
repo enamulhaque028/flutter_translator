@@ -39,6 +39,7 @@ dependencies:
   translator: ^0.1.7
   dropdown_search: ^0.5.0
   speech_to_text: ^6.0.0
+  flutter_tts: ^3.5.3
 
 dev_dependencies:
   flutter_test:
