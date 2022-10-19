@@ -1,6 +1,9 @@
 class Constants {
   Constants._();
 
+  static Map<String, String> maleVoice = {"name": "bn-BD-language", "locale": "bn-BD"};
+  static Map<String, String> femaleVoice = {"name": "es-US-language", "locale": "es-US"};
+
   static List<Map<String, String>> allLanguageList = [
   {"languageCode":"ab", "languageName":"Abkhaz", "nativeName":"аҧсуа"},
   {"languageCode":"aa", "languageName":"Afar", "nativeName":"Afaraf"},
@@ -31,7 +34,7 @@ class Constants {
   {"languageCode":"ch", "languageName":"Chamorro", "nativeName":"Chamoru"},
   {"languageCode":"ce", "languageName":"Chechen", "nativeName":"нохчийн мотт"},
   {"languageCode":"ny", "languageName":"Chichewa; Chewa; Nyanja", "nativeName":"chiCheŵa, chinyanja"},
-  {"languageCode":"zh", "languageName":"Chinese", "nativeName":"中文 (Zhōngwén), 汉语, 漢語"},
+  {"languageCode":"zh-cn", "languageName":"Chinese", "nativeName":"中文 (Zhōngwén), 汉语, 漢語"},
   {"languageCode":"cv", "languageName":"Chuvash", "nativeName":"чӑваш чӗлхи"},
   {"languageCode":"kw", "languageName":"Cornish", "nativeName":"Kernewek"},
   {"languageCode":"co", "languageName":"Corsican", "nativeName":"corsu, lingua corsa"},

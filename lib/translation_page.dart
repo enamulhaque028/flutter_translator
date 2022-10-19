@@ -5,6 +5,8 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 import 'package:translator/translator.dart';
 import 'package:translator_app/config/route.dart';
 import 'package:translator_app/domain/dropdown_data.dart';
@@ -27,14 +29,29 @@ class _TranslationPageState extends State<TranslationPage> {
   bool hasFinished = false;
   FlutterTts flutterTts = FlutterTts();
   List<Language> languageList = [];
-  String languageCode = '';
+  //::::::::::::::: TTS :::::::::::::::
+  double volume = 1.0;
+  double pitch = 1.0;
+  double speechRate = 0.5;
+  //::::::::::::::: STT :::::::::::::::
+  final SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  
+
+  /// This has to happen only once per app
+  void _initSpeech() async {
+    _speechEnabled = await _speechToText.initialize();
+    setState(() {});
+  }
 
   @override
   void initState() {
     String res = json.encode(Constants.allLanguageList);
     languageList = languageFromJson(res);
+    _initSpeech();
     super.initState();
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,19 +69,7 @@ class _TranslationPageState extends State<TranslationPage> {
                 hint: 'Select language to translate',
                 showSearchBox: true,
                 itemAsString: (Language? data) => '${data!.languageName} (${data.nativeName})',
-                onChanged: (Language? data) async {
-                  log(data!.languageCode);
-                  await flutterTts.stop();
-                  setState(() {
-                    outputTextController.text = 'Translating.......';
-                  });
-                  Translation translation = await translator.translate(inputTextController.text, to: data.languageCode);
-                  setState(() {
-                    outputTextController.text = translation.text;
-                    hasFinished = true;
-                    languageCode = data.languageCode;
-                  });
-                },
+                onChanged: translateLanguage,
                 items: languageList,
               ),
               const SizedBox(height: 16),
@@ -96,7 +101,7 @@ class _TranslationPageState extends State<TranslationPage> {
                         ),
                         const SizedBox(width: 8),
                         CustomIconButton(
-                          onTap: controlTextToSpeech,
+                          onTap: convertTextToSpeech,
                           iconData: Icons.volume_up,
                         ),
                       ],
@@ -104,14 +109,100 @@ class _TranslationPageState extends State<TranslationPage> {
                   ) : const SizedBox.shrink(),
                 ],
               ),
+              Row(
+                children: [
+                  const SizedBox(width: 80, child: Text('Volume')),
+                  Slider(
+                    min: 0.0,
+                    max: 1.0,
+                    value: volume,
+                    onChanged: (value) {
+                      setState(() {
+                        volume = value;
+                      });
+                    },
+                  ),
+                  SizedBox(
+                    width: 80,
+                    child: Text(double.parse(volume.toStringAsFixed(2)).toString()),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  const SizedBox(width: 80, child: Text('Pitch')),
+                  Slider(
+                    min: 0.5,
+                    max: 2.0,
+                    value: pitch,
+                    onChanged: (value) {
+                      setState(() {
+                        pitch = value;
+                      });
+                    },
+                  ),
+                  SizedBox(
+                    width: 80,
+                    child: Text(double.parse(pitch.toStringAsFixed(2)).toString()),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  const SizedBox(width: 80, child: Text('Speech Rate')),
+                  Slider(
+                    min: 0.0,
+                    max: 1.0,
+                    value: speechRate,
+                    onChanged: (value) {
+                      setState(() {
+                        speechRate = value;
+                      });
+                    },
+                  ),
+                  SizedBox(
+                    width: 80,
+                    child: Text(double.parse(speechRate.toStringAsFixed(2)).toString()),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic),
+        onPressed: () {
+          // RouteController.instance.push(page: const VoiceToTextWidget());
+          _speechToText.isNotListening ? _startListening() : _stopListening();
+        },
+      ),
     );
   }
 
-  Future<void> controlTextToSpeech() async {
+  //::::::::::::::::::::::::::::: Translate Language :::::::::::::::::::::::::::::
+  Future<void> translateLanguage(Language? data) async {
+    log(data!.languageCode);
+    await flutterTts.stop();
+    setState(() {
+      outputTextController.text = 'Translating.......';
+    });
+    Translation translation = await translator.translate(inputTextController.text, to: data.languageCode);
+    setState(() {
+      outputTextController.text = translation.text;
+      hasFinished = true;
+    });
+  }
+
+  //::::::::::::::::::::::::::::: Initialize TTF Settings :::::::::::::::::::::::::::::
+  Future<void> initTTSSettings() async {
+    await flutterTts.setVolume(volume);
+    await flutterTts.setPitch(pitch);
+    await flutterTts.setSpeechRate(speechRate);
+  }
+
+  //::::::::::::::::::::::::::::: Convert Text To Speech :::::::::::::::::::::::::::::
+  Future<void> convertTextToSpeech() async {
     // bool isLanguageAvailable = await flutterTts.isLanguageAvailable(languageCode) as bool;
     // if (isLanguageAvailable) {
     //   await flutterTts.speak(outputTextController.text);
@@ -119,7 +210,34 @@ class _TranslationPageState extends State<TranslationPage> {
     //   String errText = 'Sorry this language is not available!';
     //   await flutterTts.speak(errText);
     //   RouteController.instance.showSnackBar(message: errText);
-    // }
+    initTTSSettings();
     await flutterTts.speak(outputTextController.text);
+  }
+
+  //::::::::::::::::::::::::::::: Convert Speech To Text :::::::::::::::::::::::::::::
+
+  // Each time to start a speech recognition session
+  void _startListening() async {
+    inputTextController.clear();
+    outputTextController.clear();
+    await _speechToText.listen(onResult: _onSpeechResult, localeId: 'bn');
+    setState(() {});
+  }
+
+  /// Manually stop the active speech recognition session
+  /// Note that there are also timeouts that each platform enforces
+  /// and the SpeechToText plugin supports setting timeouts on the
+  /// listen method.
+  void _stopListening() async {
+    await _speechToText.stop();
+    setState(() {});
+  }
+
+  /// This is the callback that the SpeechToText plugin calls when
+  /// the platform returns recognized words.
+  void _onSpeechResult(SpeechRecognitionResult result) {
+    setState(() {
+      inputTextController.text = result.recognizedWords;
+    });
   }
 }
