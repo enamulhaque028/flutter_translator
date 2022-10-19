@@ -28,7 +28,7 @@ class _VoiceToTextWidgetState extends State<VoiceToTextWidget> {
 
   /// Each time to start a speech recognition session
   void _startListening() async {
-    await _speechToText.listen(onResult: _onSpeechResult, localeId: 'bn');
+    await _speechToText.listen(onResult: _onSpeechResult, localeId: 'en');
     setState(() {});
   }
 

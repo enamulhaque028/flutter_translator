@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:translator_app/config/presentation/app_color.dart';
 import 'package:translator_app/config/route.dart';
 import 'package:translator_app/translation_page.dart';
 
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: AppColor.primarySwatch,
       ),
       home: const TranslationPage(),
     );
