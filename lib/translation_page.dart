@@ -5,13 +5,17 @@ import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:translator/translator.dart';
+import 'package:translator_app/config/presentation/app_color.dart';
 import 'package:translator_app/config/route.dart';
 import 'package:translator_app/domain/dropdown_data.dart';
 import 'package:translator_app/widgets/custom_icon_button.dart';
+import 'package:translator_app/widgets/custom_languale_dropdown.dart';
 import 'package:translator_app/widgets/custom_text_filed.dart';
+import 'package:translator_app/widgets/image_picker_tile.dart';
 
 import 'config/constants.dart';
 
@@ -28,7 +32,6 @@ class _TranslationPageState extends State<TranslationPage> {
   final translator = GoogleTranslator();
   bool hasFinished = false;
   FlutterTts flutterTts = FlutterTts();
-  List<Language> languageList = [];
   //::::::::::::::: TTS :::::::::::::::
   double volume = 1.0;
   double pitch = 1.0;
@@ -36,6 +39,10 @@ class _TranslationPageState extends State<TranslationPage> {
   //::::::::::::::: STT :::::::::::::::
   final SpeechToText _speechToText = SpeechToText();
   bool _speechEnabled = false;
+
+  final TextRecognizer textRecognizer = TextRecognizer();
+  String inputLanguageCode = 'auto';
+  String outputLanguageCode = 'bn';
   
 
   /// This has to happen only once per app
@@ -46,8 +53,6 @@ class _TranslationPageState extends State<TranslationPage> {
 
   @override
   void initState() {
-    String res = json.encode(Constants.allLanguageList);
-    languageList = languageFromJson(res);
     _initSpeech();
     super.initState();
   }
@@ -55,22 +60,56 @@ class _TranslationPageState extends State<TranslationPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(
+        title: const Text('Translator'),
+        centerTitle: true,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              CustomTextField(
-                textEditingController: inputTextController,
-                placeholderText: 'Enter text here',
+              Stack(
+                children: [
+                  CustomTextField(
+                    textEditingController: inputTextController,
+                    placeholderText: 'Enter text here',
+                  ),
+                  Positioned(
+                    right: 20,
+                    bottom: 25,
+                    child: Row(
+                      children: [
+                        PickImages(
+                          onSelectImage: convertSpeechToText,
+                        ),
+                        const SizedBox(width: 8),
+                        CustomIconButton(
+                          onTap: () {
+                            _speechToText.isNotListening ? _startListening() : _stopListening();
+                          },
+                          iconData: _speechToText.isNotListening ? Icons.mic_off : Icons.mic,
+                        ),
+                      ],
+                    ),
+                  )
+                ],
               ),
-              DropdownSearch<Language>(
-                hint: 'Select language to translate',
-                showSearchBox: true,
-                itemAsString: (Language? data) => '${data!.languageName} (${data.nativeName})',
-                onChanged: translateLanguage,
-                items: languageList,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  CustomLanguageDropdown(
+                    hintText: 'Auto',
+                    onTapItem: (Language? data) {
+                      inputLanguageCode = data!.languageCode;
+                    },
+                  ),
+                  const Icon(Icons.keyboard_double_arrow_right_rounded),
+                  CustomLanguageDropdown(
+                    hintText: 'Select',
+                    onTapItem: translateLanguage,
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Stack(
@@ -170,24 +209,18 @@ class _TranslationPageState extends State<TranslationPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(_speechToText.isNotListening ? Icons.mic_off : Icons.mic),
-        onPressed: () {
-          // RouteController.instance.push(page: const VoiceToTextWidget());
-          _speechToText.isNotListening ? _startListening() : _stopListening();
-        },
-      ),
     );
   }
 
-  //::::::::::::::::::::::::::::: Translate Language :::::::::::::::::::::::::::::
+ //::::::::::::::::::::::::::::: Translate Language :::::::::::::::::::::::::::::
   Future<void> translateLanguage(Language? data) async {
     log(data!.languageCode);
+    outputLanguageCode = data.languageCode;
     await flutterTts.stop();
     setState(() {
       outputTextController.text = 'Translating.......';
     });
-    Translation translation = await translator.translate(inputTextController.text, to: data.languageCode);
+    Translation translation = await translator.translate(inputTextController.text, to: outputLanguageCode);
     setState(() {
       outputTextController.text = translation.text;
       hasFinished = true;
@@ -218,10 +251,14 @@ class _TranslationPageState extends State<TranslationPage> {
 
   // Each time to start a speech recognition session
   void _startListening() async {
-    inputTextController.clear();
-    outputTextController.clear();
-    await _speechToText.listen(onResult: _onSpeechResult, localeId: 'bn');
-    setState(() {});
+    if (inputLanguageCode == 'auto') {
+      RouteController.instance.showSnackBar(message: 'please select an input language');
+    } else {
+      inputTextController.clear();
+      outputTextController.clear();
+      await _speechToText.listen(onResult: _onSpeechResult, localeId: inputLanguageCode);
+      setState(() {});
+    }
   }
 
   /// Manually stop the active speech recognition session
@@ -239,5 +276,25 @@ class _TranslationPageState extends State<TranslationPage> {
     setState(() {
       inputTextController.text = result.recognizedWords;
     });
+  }
+
+
+  //::::::::::::::::::::::::::::: Translate Language :::::::::::::::::::::::::::::
+  Future<void> convertSpeechToText(imagePath) async {
+    inputTextController.clear();
+    outputTextController.clear();
+    final inputImage = InputImage.fromFilePath(imagePath!);
+    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+    String scannedText = '';
+    for (TextBlock block in recognizedText.blocks) {
+      // for (TextLine line in block.lines) {
+      //   scannedText = '$scannedText${line.text.replaceAll('\n', '')}\n';
+      // }
+      String blockText = block.text.replaceAll('\n', ' ');
+      scannedText = '$scannedText$blockText\n';
+    }
+    log(scannedText);
+    inputTextController.text = scannedText;
+    setState(() {});
   }
 }
