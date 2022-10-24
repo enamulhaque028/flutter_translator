@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:developer';
 
-import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -9,15 +7,13 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:translator/translator.dart';
-import 'package:translator_app/config/presentation/app_color.dart';
 import 'package:translator_app/config/route.dart';
 import 'package:translator_app/domain/dropdown_data.dart';
+import 'package:translator_app/pdf_to_voice.dart';
 import 'package:translator_app/widgets/custom_icon_button.dart';
 import 'package:translator_app/widgets/custom_languale_dropdown.dart';
 import 'package:translator_app/widgets/custom_text_filed.dart';
 import 'package:translator_app/widgets/image_picker_tile.dart';
-
-import 'config/constants.dart';
 
 class TranslationPage extends StatefulWidget {
   const TranslationPage({super.key});
@@ -208,6 +204,12 @@ class _TranslationPageState extends State<TranslationPage> {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: const Icon(Icons.picture_as_pdf_sharp),
+        onPressed: () {
+          RouteController.instance.push(page: const PdfToVoice());
+        },
       ),
     );
   }
