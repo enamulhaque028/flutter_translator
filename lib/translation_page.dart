@@ -9,6 +9,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:translator/translator.dart';
 import 'package:translator_app/config/route.dart';
 import 'package:translator_app/domain/dropdown_data.dart';
+import 'package:translator_app/nid_info.dart';
 import 'package:translator_app/pdf_to_voice.dart';
 import 'package:translator_app/widgets/custom_icon_button.dart';
 import 'package:translator_app/widgets/custom_languale_dropdown.dart';
@@ -77,7 +78,7 @@ class _TranslationPageState extends State<TranslationPage> {
                     child: Row(
                       children: [
                         PickImages(
-                          onSelectImage: convertSpeechToText,
+                          onSelectImage: convertImageToText,
                         ),
                         const SizedBox(width: 8),
                         CustomIconButton(
@@ -201,6 +202,12 @@ class _TranslationPageState extends State<TranslationPage> {
                   ),
                 ],
               ),
+              ElevatedButton(
+                onPressed: () {
+                  RouteController.instance.push(page: const NidInfo());
+                },
+                child: const Text('NID'),
+              )
             ],
           ),
         ),
@@ -281,8 +288,8 @@ class _TranslationPageState extends State<TranslationPage> {
   }
 
 
-  //::::::::::::::::::::::::::::: Translate Language :::::::::::::::::::::::::::::
-  Future<void> convertSpeechToText(imagePath) async {
+  //::::::::::::::::::::::::::::: Convert Image To Text :::::::::::::::::::::::::::::
+  Future<void> convertImageToText(imagePath) async {
     inputTextController.clear();
     outputTextController.clear();
     final inputImage = InputImage.fromFilePath(imagePath!);
