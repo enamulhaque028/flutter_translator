@@ -46,6 +46,7 @@ class _NidInfoState extends State<NidInfo> {
       name = '';
       nidNo = '';
       dateOfBirth = '';
+      ocrText = '';
     });
     final inputImage = InputImage.fromFilePath(imagePath!);
     final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
@@ -56,17 +57,20 @@ class _NidInfoState extends State<NidInfo> {
     }
     log(ocrText);
     setState(() {
-      name = getText('name@', '@').toUpperCase();
-      nidNo = getText('nid no@', '@').toUpperCase();
-      dateOfBirth = getText('@date of birth', '@').trimLeft().toUpperCase();
+      name = getText('name@', '@');
+      nidNo = getText('nid no@', '@');
+      dateOfBirth = getText('@date of birth', '@').trimLeft();
     });
   }
 
   String getText(String start, String end) {
+    String textFromOcr = 'not found! Invalid NID!!!';
     String str = ocrText.toLowerCase();
     final startIndex = str.indexOf(start);
-    final endIndex = str.indexOf(end, startIndex + start.length);
-    String textFromOcr = str.substring(startIndex + start.length, endIndex);
-    return textFromOcr;
+    if (startIndex != -1) {
+      final endIndex = str.indexOf(end, startIndex + start.length);
+      textFromOcr = str.substring(startIndex + start.length, endIndex);
+    }
+    return textFromOcr.toUpperCase();
   }
 }
